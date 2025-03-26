@@ -5,7 +5,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 const getHeaders = () => {
   let token = '';
   
-  // Get token from cookie
   if (typeof document !== 'undefined') {
     const tokenCookie = document.cookie.split('; ').find(row => row.startsWith('token='));
     if (tokenCookie) {
@@ -19,7 +18,6 @@ const getHeaders = () => {
   };
 };
 
-// Helper to handle API responses
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   if (response.status === 401) {
     return { success: false, error: 'Authentication required. Please log in again.' };
@@ -88,7 +86,6 @@ export const createChronicle = async (chronicle: Partial<Chronicle>): Promise<Ap
           };
         }
       } catch (e) {
-        // Ignore parsing errors
       }
     }
     
@@ -143,14 +140,12 @@ export const searchChronicles = async (query: string): Promise<ApiResponse<Searc
       credentials: 'include',
     });
     
-    // If the search endpoint returns a 500 with a Qdrant error, try the query endpoint
     if (response.status === 500) {
       try {
         const errorText = await response.text();
         if (errorText.includes('Qdrant') || errorText.includes('Forbidden')) {
           console.warn('Qdrant search failed, trying direct query endpoint');
           
-          // Try the new endpoint for direct querying
           const queryResponse = await fetch(`${API_URL}/api/search/query`, {
             method: 'POST',
             headers: getHeaders(),
@@ -163,7 +158,6 @@ export const searchChronicles = async (query: string): Promise<ApiResponse<Searc
           }
         }
       } catch (e) {
-        // Ignore parsing errors
       }
     }
     
@@ -174,13 +168,9 @@ export const searchChronicles = async (query: string): Promise<ApiResponse<Searc
   }
 };
 
-// These functions are mocked since the backend doesn't have these routes yet
-// They'll return empty data until the backend implements them
 
-// Query History - Mock
 export const getQueryHistory = async (): Promise<ApiResponse<QueryHistory[]>> => {
   try {
-    // First try the real endpoint
     const response = await fetch(`${API_URL}/api/search/history`, {
       headers: getHeaders(),
       credentials: 'include',
@@ -204,10 +194,8 @@ export const getQueryHistory = async (): Promise<ApiResponse<QueryHistory[]>> =>
   }
 };
 
-// AI Queries
 export const queryAI = async (query: string): Promise<ApiResponse<string>> => {
   try {
-    // Try the direct query endpoint
     const response = await fetch(`${API_URL}/api/search/query`, {
       method: 'POST',
       headers: getHeaders(),
@@ -225,7 +213,6 @@ export const queryAI = async (query: string): Promise<ApiResponse<string>> => {
       }
     }
     
-    // Fall back to mock if the endpoint isn't available
     console.warn('Warning: queryAI API endpoint not implemented on backend or failed');
     return { 
       success: true, 
@@ -240,7 +227,6 @@ export const queryAI = async (query: string): Promise<ApiResponse<string>> => {
   }
 };
 
-// Links - Mock
 export const getLinks = async (): Promise<ApiResponse<Link[]>> => {
   console.warn('Warning: getLinks API endpoint not implemented on backend');
   return { 
@@ -265,7 +251,6 @@ export const deleteLink = async (id: string): Promise<ApiResponse<void>> => {
   };
 };
 
-// Shared Collections - Mock
 export const shareChronicles = async (chronicleIds: string[]): Promise<ApiResponse<SharedCollection>> => {
   console.warn('Warning: shareChronicles API endpoint not implemented on backend');
   return { 
