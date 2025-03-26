@@ -1,8 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface AuthResponse {
-  success: boolean;
   token?: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+  };
   error?: string;
 }
 
@@ -15,6 +19,14 @@ export interface SignupCredentials extends UserCredentials {
   name: string;
 }
 
+const setTokenCookie = (token: string) => {
+  document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Strict`;
+};
+
+const removeTokenCookie = () => {
+  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+};
+
 export const login = async (credentials: UserCredentials): Promise<AuthResponse> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -23,18 +35,27 @@ export const login = async (credentials: UserCredentials): Promise<AuthResponse>
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
+      credentials: 'include',
     });
 
     const data = await response.json();
 
-    if (data.success && data.token) {
-      localStorage.setItem('token', data.token);
+    if (!response.ok) {
+      return {
+        error: data.error || 'Invalid credentials',
+      };
     }
 
-    return data;
+    if (data.token) {
+      setTokenCookie(data.token);
+      return data;
+    }
+
+    return {
+      error: 'Invalid response from server',
+    };
   } catch (error) {
     return {
-      success: false,
       error: 'An error occurred during login. Please try again.',
     };
   }
@@ -48,18 +69,27 @@ export const signup = async (credentials: SignupCredentials): Promise<AuthRespon
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
+      credentials: 'include',
     });
 
     const data = await response.json();
 
-    if (data.success && data.token) {
-      localStorage.setItem('token', data.token);
+    if (!response.ok) {
+      return {
+        error: data.error || 'Failed to create account',
+      };
     }
 
-    return data;
+    if (data.token) {
+      setTokenCookie(data.token);
+      return data;
+    }
+
+    return {
+      error: 'Invalid response from server',
+    };
   } catch (error) {
     return {
-      success: false,
       error: 'An error occurred during signup. Please try again.',
     };
   }
@@ -71,26 +101,27 @@ export const logout = async (): Promise<AuthResponse> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
+      credentials: 'include',
     });
 
-    const data = await response.json();
+    removeTokenCookie();
 
-    if (data.success) {
-      localStorage.removeItem('token');
+    if (response.ok) {
+      return { };
     }
 
-    return data;
-  } catch (error) {
+    const data = await response.json();
     return {
-      success: false,
-      error: 'An error occurred during logout. Please try again.',
+      error: data.error || 'Failed to logout',
     };
+  } catch (error) {
+    removeTokenCookie();
+    return { };
   }
 };
 
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('token');
+  return document.cookie.includes('token=');
 }; 

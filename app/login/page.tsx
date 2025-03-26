@@ -21,7 +21,7 @@ export default function Login() {
 
     const response = await login(formData);
     
-    if (response.success) {
+    if (response.token) {
       router.push('/dashboard');
     } else {
       setError(response.error || 'Invalid credentials');
