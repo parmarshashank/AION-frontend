@@ -3,6 +3,7 @@ export interface Chronicle {
   title: string;
   content: string;
   tags: string[];
+  referenceLinks?: string[];
   createdAt: string;
   updatedAt: string;
   userId: string;
